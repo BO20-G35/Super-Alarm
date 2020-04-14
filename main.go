@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 type alarm struct {
@@ -25,13 +26,25 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func toggleAlarm(w http.ResponseWriter, r *http.Request) {
+
+	token := GenerateToken(w)
+	log.Print(token) // Temp for debugging
+
+	// TODO:: Send with JWT
+	_, err := http.PostForm("http://localhost:8081/toggleWithJWT", url.Values{"k": {"JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE"}})
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Fprintln(w, "Alarm status was successfully switched.")
+	}
+}
+
+func toggleWithJWT(w http.ResponseWriter, r *http.Request) {
 	if validateKeyInUrl(r) {
 		superAlarm.status = !superAlarm.status // toggles from on->off and off->on
 		w.WriteHeader(http.StatusAccepted)
-		_, _ = fmt.Fprintf(w, "Alarm status was successfully switched.")
 	} else {
 		w.WriteHeader(http.StatusForbidden)
-		_, _ = fmt.Fprintf(w, "Invalid Key.")
 	}
 }
 
@@ -41,6 +54,7 @@ func main() {
 	router.HandleFunc("/", homeLink)
 	router.HandleFunc("/status", getStatus).Methods("GET")
 	router.HandleFunc("/toggle", toggleAlarm).Methods("GET")
+	router.HandleFunc("/toggleWithJWT", toggleWithJWT).Methods("POST")
 
 	//log.Fatal(http.ListenAndServeTLS(addrString, "server.crt", "server.key", router))
 	log.Fatal(http.ListenAndServe("0.0.0.0:8081", router))
