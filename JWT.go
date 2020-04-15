@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/dgrijalva/jwt-go"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
@@ -24,7 +25,7 @@ func RandString(n int) string {
 	return string(b)
 }
 
-func GenerateToken(w http.ResponseWriter) *jwt.Token {
+func GenerateToken(w http.ResponseWriter) http.Cookie {
 
 	expirationTime := time.Now().Add(5 * time.Minute)
 
@@ -42,15 +43,59 @@ func GenerateToken(w http.ResponseWriter) *jwt.Token {
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return nil
 	}
 
-	// Set client Cookies TODO:: is necessary?
-	http.SetCookie(w, &http.Cookie{
+	cookie := http.Cookie{
 		Name:    "token",
 		Value:   tokenString,
 		Expires: expirationTime,
-	})
+		Path:    "/",
+	}
 
-	return token
+	// Set client Cookies
+	http.SetCookie(w, &cookie)
+
+	return cookie
+}
+
+func ReadJwtToken(w http.ResponseWriter, r *http.Request) {
+
+	// Extract the jwt cookie
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			w.WriteHeader(http.StatusUnauthorized)
+			log.Println("no cookie set")
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("cookie parse error")
+		return
+	}
+
+	// Get the JWT string and parse
+	tokenstring := cookie.Value
+	jwtInfo := &JwtTokenInfo{}
+	tkn, err := jwt.ParseWithClaims(tokenstring, jwtInfo, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			w.WriteHeader(http.StatusUnauthorized)
+			log.Println("invalid signature")
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("cannot parse JWT")
+		return
+	}
+	if !tkn.Valid {
+		w.WriteHeader(http.StatusUnauthorized)
+		log.Println("token is invalid")
+		return
+	}
+
+	log.Println("Unique ID: " + jwtInfo.UniqueID)
+
+	// TODO:: check if uniqueID from jwt is same as logged cookie
 }

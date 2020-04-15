@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"net/url"
 )
 
 type alarm struct {
@@ -27,25 +26,21 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 
 func toggleAlarm(w http.ResponseWriter, r *http.Request) {
 
-	token := GenerateToken(w)
-	log.Print(token) // Temp for debugging
-
-	// TODO:: Send with JWT
-	_, err := http.PostForm("http://localhost:8081/toggleWithJWT", url.Values{"k": {"JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE"}})
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", "http://localhost:8081/toggleWithJWT", nil)
+	req.RemoteAddr = r.RemoteAddr // TODO:: unsure of this
+	cookie := GenerateToken(w)
+	req.AddCookie(&cookie)
+	_, err := client.Do(req)
 	if err != nil {
-		panic(err)
-	} else {
-		fmt.Fprintln(w, "Alarm status was successfully switched.")
+		fmt.Println("ERROR: " + err.Error())
 	}
 }
 
 func toggleWithJWT(w http.ResponseWriter, r *http.Request) {
-	if validateKeyInUrl(r) {
-		superAlarm.status = !superAlarm.status // toggles from on->off and off->on
-		w.WriteHeader(http.StatusAccepted)
-	} else {
-		w.WriteHeader(http.StatusForbidden)
-	}
+
+	superAlarm.status = !superAlarm.status // toggles from on->off and off->on
+	ReadJwtToken(w, r)
 }
 
 func main() {
