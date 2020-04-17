@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"log"
 	"math/rand"
@@ -11,6 +12,8 @@ import (
 var jwtKey = []byte("rstydfkrGRGEARFGHAREG")
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+var previousCookie *http.Cookie
 
 type JwtTokenInfo struct {
 	UniqueID string `json:"unique_id"`
@@ -45,6 +48,7 @@ func GenerateToken(w http.ResponseWriter) http.Cookie {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
+	// create JWT cookie
 	cookie := http.Cookie{
 		Name:    "token",
 		Value:   tokenString,
@@ -58,19 +62,17 @@ func GenerateToken(w http.ResponseWriter) http.Cookie {
 	return cookie
 }
 
-func ReadJwtToken(w http.ResponseWriter, r *http.Request) {
+func ReadJwtToken(w http.ResponseWriter, r *http.Request) error {
 
 	// Extract the jwt cookie
 	cookie, err := r.Cookie("token")
 	if err != nil {
 		if err == http.ErrNoCookie {
 			w.WriteHeader(http.StatusUnauthorized)
-			log.Println("no cookie set")
-			return
+			return errors.New("no cookie set")
 		}
 		w.WriteHeader(http.StatusBadRequest)
-		log.Println("cookie parse error")
-		return
+		return errors.New("cookie parse error")
 	}
 
 	// Get the JWT string and parse
@@ -82,20 +84,25 @@ func ReadJwtToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
 			w.WriteHeader(http.StatusUnauthorized)
-			log.Println("invalid signature")
-			return
+			return errors.New("invalid signature")
 		}
 		w.WriteHeader(http.StatusBadRequest)
-		log.Println("cannot parse JWT")
-		return
+		return errors.New("cannot parse JWT")
 	}
 	if !tkn.Valid {
 		w.WriteHeader(http.StatusUnauthorized)
-		log.Println("token is invalid")
-		return
+		return errors.New("token is invalid")
 	}
 
-	log.Println("Unique ID: " + jwtInfo.UniqueID)
+	return nil
+}
 
-	// TODO:: check if uniqueID from jwt is same as logged cookie
+func CompareCookies(cookie *http.Cookie) bool {
+
+	if previousCookie == nil {
+		log.Println("previous cookie is empty")
+		return false
+	}
+
+	return cookie.Value == previousCookie.Value
 }

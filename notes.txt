@@ -1,0 +1,2 @@
+To get flag:
+curl -b <cookie> http://localhost:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE

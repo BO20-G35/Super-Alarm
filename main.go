@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type alarm struct {
@@ -24,23 +25,42 @@ func getStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func toggleAlarm(w http.ResponseWriter, r *http.Request) {
+func getCookie(w http.ResponseWriter, r *http.Request) {
 
-	client := &http.Client{}
-	req, _ := http.NewRequest("POST", "http://localhost:8081/toggleWithJWT", nil)
-	req.RemoteAddr = r.RemoteAddr // TODO:: unsure of this
-	cookie := GenerateToken(w)
-	req.AddCookie(&cookie)
-	_, err := client.Do(req)
-	if err != nil {
-		fmt.Println("ERROR: " + err.Error())
-	}
+	// Assign JWT as cookie to client
+	GenerateToken(w)
+
+	// Button toggles
+	fmt.Fprintln(w, "<b>Important!</b> Only press this once!<a href=\"http://localhost:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE\">toggle</a>")
 }
 
-func toggleWithJWT(w http.ResponseWriter, r *http.Request) {
+func toggle(w http.ResponseWriter, r *http.Request) {
 
-	superAlarm.status = !superAlarm.status // toggles from on->off and off->on
-	ReadJwtToken(w, r)
+	if validateKeyInUrl(r) {
+
+		superAlarm.status = !superAlarm.status // toggles alarm from on->off and off->on
+		fmt.Fprintln(w, "Successfully toggled alarm. Status: "+strconv.FormatBool(superAlarm.status))
+
+		// Checks for JWT token in cookie
+		err := ReadJwtToken(w, r)
+		if err == nil {
+
+			// Checks if the current JWT token is the same as previousCookie, if so prints flag
+			cookie, err := r.Cookie("token")
+			if err == nil {
+				if CompareCookies(cookie) {
+					fmt.Fprintln(w, GetFlagString())
+				}
+				previousCookie = cookie
+			}
+		} else {
+			fmt.Fprintln(w, err.Error())
+		}
+
+	} else {
+		w.WriteHeader(401)
+		fmt.Fprintln(w, "You are not authorized to make this request.")
+	}
 }
 
 func main() {
@@ -48,8 +68,8 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", homeLink)
 	router.HandleFunc("/status", getStatus).Methods("GET")
-	router.HandleFunc("/toggle", toggleAlarm).Methods("GET")
-	router.HandleFunc("/toggleWithJWT", toggleWithJWT).Methods("POST")
+	router.HandleFunc("/getCookie", getCookie).Methods("GET")
+	router.HandleFunc("/toggle", toggle).Methods("GET")
 
 	//log.Fatal(http.ListenAndServeTLS(addrString, "server.crt", "server.key", router))
 	log.Fatal(http.ListenAndServe("0.0.0.0:8081", router))

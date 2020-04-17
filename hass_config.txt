@@ -8,8 +8,8 @@ switch:
         value_template: '{{ value == "1" }}'
         friendly_name: Super lock
     superalarm:
-        command_on: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/toggle"
-        command_off: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/toggle"
+        command_on: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE"
+        command_off: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE"
         command_state: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/status"
         value_template: '{{ value == false }}'
         friendly_name: Super alarm
