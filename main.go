@@ -5,14 +5,13 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 type alarm struct {
-	status bool
+	status string
 }
 
-var superAlarm = alarm{status: false}
+var superAlarm = alarm{status: "0"}
 
 func homeLink(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Super Alarm IP adress")
@@ -38,8 +37,13 @@ func toggle(w http.ResponseWriter, r *http.Request) {
 
 	if validateKeyInUrl(r) {
 
-		superAlarm.status = !superAlarm.status // toggles alarm from on->off and off->on
-		fmt.Fprintln(w, "Successfully toggled alarm. Status: "+strconv.FormatBool(superAlarm.status))
+		if superAlarm.status == "0" {
+			superAlarm.status = "1"
+		} else {
+			superAlarm.status = "0"
+		}
+
+		fmt.Fprintln(w, "Successfully toggled alarm. Status: "+superAlarm.status)
 
 		// Checks for JWT token in cookie
 		err := ReadJwtToken(w, r)
