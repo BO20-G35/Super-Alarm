@@ -1,4 +1,4 @@
-switch:
+switch 0:
   - platform: command_line
     switches:
       superlock:
@@ -7,9 +7,13 @@ switch:
         command_state: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8080/status"
         value_template: '{{ value == "1" }}'
         friendly_name: Super lock
+
+switch 1:
+  - platform: command_line
+    switches:
     superalarm:
         command_on: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE"
         command_off: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE"
         command_state: "/usr/bin/curl --insecure -X GET https://127.0.0.1:8081/status"
-        value_template: '{{ value == false }}'
+        value_template: '{{ value == "false" }}'
         friendly_name: Super alarm
