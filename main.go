@@ -30,7 +30,7 @@ func getCookie(w http.ResponseWriter, r *http.Request) {
 	GenerateToken(w)
 
 	// Button toggles
-	fmt.Fprintln(w, "<b>Important!</b> Only press this once!<a href=\"http://localhost:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE\">toggle</a>")
+	fmt.Fprintln(w, "<a href=\"http://localhost:8081/toggle?k=JHDGFUAYEG23RIUETYWERY3RSDFV23RGUE\">toggle</a>")
 }
 
 func toggle(w http.ResponseWriter, r *http.Request) {
